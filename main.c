@@ -418,8 +418,11 @@ HANDLE_PIECEWISE:
       ++nMatched;
       if(nMatched==len)//reach the separator marker
       {
+        Buffer* newbuf;
         htmlstr.length = p - global_buf_huge - len + 1;
-        do_dump(loadHTMLString(&htmlstr));
+        newbuf = loadHTMLString(&htmlstr);
+        do_dump(newbuf);
+        discardBuffer(newbuf);
         fwrite(delimiter,1,len,stdout); //dump delimiter itself
 
         //reset piecewise handler
