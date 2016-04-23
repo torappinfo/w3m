@@ -391,9 +391,53 @@ die_oom(size_t bytes)
     exit(1);
 }
 
+/** dump_piecewise() //added by jamesfengcao
+ */
+void dump_piecewise(const char* delimiter, const int len) 
+{
+  struct _Str htmlstr;
+
+  #define BUFLEN_HUGE 1024*1024
+  static char global_buf_huge[BUFLEN_HUGE];
+  char* p = htmlstr.ptr = global_buf_huge;
+  htmlstr.area_size = BUFLEN_HUGE;
+  
+  int nMatched = 0;
+  char c;
+  int c_int;
+HANDLE_PIECEWISE:
+  while(EOF != (c_int=fgetc(stdin)) )
+  {
+    c = c_int;
+    if(c!=delimiter[nMatched])
+    {
+      nMatched = 0;
+    }
+    else
+    {
+      ++nMatched;
+      if(nMatched==len)//reach the separator marker
+      {
+        htmlstr.length = p - global_buf_huge - len + 1;
+        do_dump(loadHTMLString(&htmlstr));
+        fwrite(delimiter,1,len,stdout); //dump delimiter itself
+
+        //reset piecewise handler
+        p = global_buf_huge;
+        nMatched = 0;
+        goto HANDLE_PIECEWISE;
+      }
+    }
+    *p++ = c;
+  }
+  
+}
+
 int
 main(int argc, char **argv, char **envp)
 {
+  char* w3m_delimiter = NULL; //added by jamesfengcao
+  
     Buffer *newbuf = NULL;
     char *p, c;
     int i;
@@ -634,7 +678,15 @@ main(int argc, char **argv, char **envp)
 		    WrapDefault = TRUE;
 	    }
 	    else if (!strcmp("-dump", argv[i]))
+            {
 		w3m_dump = DUMP_BUFFER;
+                //added by jamesfengcao
+                if (i+2<argc && !strcmp("-S", argv[i+1]))
+                {
+                  i += 2;
+                  w3m_delimiter = argv[i];
+                }
+            }
 	    else if (!strcmp("-dump_source", argv[i]))
 		w3m_dump = DUMP_SOURCE;
 	    else if (!strcmp("-dump_head", argv[i]))
@@ -665,9 +717,6 @@ main(int argc, char **argv, char **envp)
 		if (++i >= argc)
 		    usage();
 		COLS = atoi(argv[i]);
-		if (COLS > MAXIMUM_COLS) {
-		    COLS = MAXIMUM_COLS;
-		}
 	    }
 	    else if (!strcmp("-ppc", argv[i])) {
 		double ppc;
@@ -915,6 +964,13 @@ main(int argc, char **argv, char **envp)
 #else
     orig_GC_warn_proc = GC_set_warn_proc(wrap_GC_warn_proc);
 #endif
+
+    if(w3m_delimiter)
+    {//dump piecewise separated by w3m_delimiter //added by jamesfengcao
+      dump_piecewise(w3m_delimiter,strlen(w3m_delimiter));
+      w3m_exit(0);
+    }
+    
     err_msg = Strnew();
     if (load_argc == 0) {
 	/* no URL specified */
