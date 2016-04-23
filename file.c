@@ -7250,34 +7250,44 @@ loadHTMLstream(URLFile *f, Buffer *newBuf, FILE * src, int internal)
 /* 
  * loadHTMLString: read string and make new buffer
  */
-Buffer *
-loadHTMLString(Str page)
+void loadHTMLString_innard(Buffer* newBuf, InputStream stream)
 {
     URLFile f;
     MySignalHandler(*volatile prevtrap) (SIGNAL_ARG) = NULL;
-    Buffer *newBuf;
 
-    init_stream(&f, SCM_LOCAL, newStrStream(page));
+    init_stream(&f, SCM_LOCAL, stream);
 
-    newBuf = newBuffer(INIT_BUFFER_WIDTH);
+    
     if (SETJMP(AbortLoading) != 0) {
 	TRAP_OFF;
 	discardBuffer(newBuf);
 	UFclose(&f);
-	return NULL;
+	return ;
     }
     TRAP_ON;
+
+    loadHTMLstream(&f, newBuf, NULL, TRUE);
+
+    TRAP_OFF;
+    UFclose(&f);
+}
+
+Buffer *
+loadHTMLString(Str page)
+{
+  InputStream stream = newStrStream(page);
+  Buffer* newBuf = newBuffer(INIT_BUFFER_WIDTH);
 
 #ifdef USE_M17N
     newBuf->document_charset = InnerCharset;
 #endif
-    loadHTMLstream(&f, newBuf, NULL, TRUE);
-#ifdef USE_M17N
+
+  loadHTMLString_innard(newBuf,stream);
+
+  #ifdef USE_M17N
     newBuf->document_charset = WC_CES_US_ASCII;
 #endif
 
-    TRAP_OFF;
-    UFclose(&f);
     newBuf->topLine = newBuf->firstLine;
     newBuf->lastLine = newBuf->currentLine;
     newBuf->currentLine = newBuf->firstLine;
@@ -7287,6 +7297,7 @@ loadHTMLString(Str page)
 	formResetBuffer(newBuf, newBuf->formitem);
     return newBuf;
 }
+
 
 #ifdef USE_GOPHER
 

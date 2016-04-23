@@ -25,7 +25,7 @@ static int basic_read(int *handle, char *buf, int len);
 static void file_close(struct io_file_handle *handle);
 static int file_read(struct io_file_handle *handle, char *buf, int len);
 
-static int str_read(Str handle, char *buf, int len);
+int str_read(Str handle, char *buf, int len);
 
 #ifdef USE_SSL
 static void ssl_close(struct ssl_handle *handle);
@@ -85,7 +85,7 @@ init_base_stream(BaseStream base, int bufsize)
     init_buffer(base, NULL, bufsize);
 }
 
-static void
+void
 init_str_stream(BaseStream base, Str s)
 {
     init_buffer(base, s->ptr, s->length);
@@ -648,7 +648,7 @@ file_read(struct io_file_handle *handle, char *buf, int len)
     return fread(buf, 1, len, handle->f);
 }
 
-static int
+int
 str_read(Str handle, char *buf, int len)
 {
     return 0;

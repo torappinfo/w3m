@@ -391,6 +391,25 @@ die_oom(size_t bytes)
     exit(1);
 }
 
+/** added by jamesfengcao */
+int str_read(Str handle, char *buf, int len);
+void loadHTMLString_innard(Buffer* newBuf, InputStream stream);
+void init_str_stream(BaseStream base, Str s);
+
+/** similar to newStrStream : by jamesfengcao */
+static void StrStream_init(InputStream stream)
+{
+    stream->str.type = IST_STR;
+    stream->str.handle = NULL;
+    stream->str.read = (int (*)())str_read;
+    stream->str.close = NULL;
+}
+
+static void StrStream_reset(InputStream stream, Str s)
+{
+  init_str_stream(&stream->base, s);
+}
+
 /** dump_piecewise() //added by jamesfengcao
  */
 void dump_piecewise(const char* delimiter, const int len) 
@@ -401,10 +420,17 @@ void dump_piecewise(const char* delimiter, const int len)
   static char global_buf_huge[BUFLEN_HUGE];
   char* p = htmlstr.ptr = global_buf_huge;
   htmlstr.area_size = BUFLEN_HUGE;
+
+  Buffer* newbuf = newBuffer(INIT_BUFFER_WIDTH);
+  union input_stream input_s;
+  InputStream stream = &input_s;
+
+  StrStream_init(stream);
   
   int nMatched = 0;
   char c;
   int c_int;
+
 HANDLE_PIECEWISE:
   while(EOF != (c_int=fgetc(stdin)) )
   {
@@ -418,9 +444,10 @@ HANDLE_PIECEWISE:
       ++nMatched;
       if(nMatched==len)//reach the separator marker
       {
-        Buffer* newbuf;
         htmlstr.length = p - global_buf_huge - len + 1;
-        newbuf = loadHTMLString(&htmlstr);
+        StrStream_reset(stream,&htmlstr);
+        
+        loadHTMLString_innard(newbuf, stream);
         do_dump(newbuf);
         discardBuffer(newbuf);
         fwrite(delimiter,1,len,stdout); //dump delimiter itself
