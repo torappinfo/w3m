@@ -4742,9 +4742,15 @@ HTMLtagproc1(struct parsed_tag *tag, struct html_feed_environ *h_env)
 	return 0;
     case HTML_HR:
 	close_anchor(h_env, obuf);
-	tmp = process_hr(tag, h_env->limit, envs[h_env->envc].indent);
-	HTMLlineproc1(tmp->ptr, h_env);
-	set_space_to_prevchar(obuf->prevchar);
+        {
+          int sav_limit = h_env->limit;
+          if( (DUMP_BUFFER==w3m_dump))
+            h_env->limit = DEFAULT_COLS;
+	  tmp = process_hr(tag, h_env->limit, envs[h_env->envc].indent);
+          HTMLlineproc1(tmp->ptr, h_env);
+          set_space_to_prevchar(obuf->prevchar);
+          h_env->limit = sav_limit;
+        }
 	return 1;
     case HTML_PRE:
 	x = parsedtag_exists(tag, ATTR_FOR_TABLE);
@@ -7622,7 +7628,7 @@ _saveBuffer(Buffer *buf, Line *l, FILE * f, int cont)
 	    tmp = Strnew_charp_n(l->lineBuf, l->len);
 	tmp = wc_Str_conv(tmp, InnerCharset, charset);
 	Strfputs(tmp, f);
-	if (Strlastchar(tmp) != '\n' && !(cont && l->next && l->next->bpos))
+	if (Strlastchar(tmp) != '\n' && !(cont && l->next && tmp->length>COLS-20))
 	    putc('\n', f);
     }
     if (buf->pagerSource && !(buf->bufferprop & BP_CLOSE)) {

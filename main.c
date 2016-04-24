@@ -1440,7 +1440,7 @@ do_dump(Buffer *buf)
 	dump_source(buf);
     if (w3m_dump == DUMP_BUFFER) {
 	int i;
-	saveBuffer(buf, stdout, FALSE);
+	saveBuffer(buf, stdout, TRUE);
 	if (displayLinkNumber && buf->href) {
 	    int nanchor = buf->href->nanchor;
 	    printf("\nReferences:\n\n");
