@@ -4744,7 +4744,7 @@ HTMLtagproc1(struct parsed_tag *tag, struct html_feed_environ *h_env)
 	close_anchor(h_env, obuf);
         {
           int sav_limit = h_env->limit;
-          if( (DUMP_BUFFER==w3m_dump))
+          if( (DUMP_BUFFER==w3m_dump) & (h_env->limit>DEFAULT_COLS))
             h_env->limit = DEFAULT_COLS;
 	  tmp = process_hr(tag, h_env->limit, envs[h_env->envc].indent);
           HTMLlineproc1(tmp->ptr, h_env);
